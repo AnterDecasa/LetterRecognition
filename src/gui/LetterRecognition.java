@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package letterrecognition;
+package gui;
 
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamPanel;
@@ -13,11 +13,15 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import letterrecognition.Processing;
 //import org.opencv.core.Core;
 //import org.opencv.core.CvType;
 //import org.opencv.core.Mat;
@@ -32,6 +36,9 @@ public class LetterRecognition {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
+        
+        Processing p = new Processing(5);
+        int ctr = 0;
         
         JFrame window = new JFrame("Test webcam panel");
         
@@ -49,6 +56,11 @@ public class LetterRecognition {
         liveFeedPanel.setMirrored(true);
         
         //Create the Control Panel
+        //Notification
+        JLabel notif = new JLabel();
+        notif.setText("Waiting...");
+        notif.setVisible(true);
+        //Capture Button
         JButton captureBtn = new JButton("Capture");
         captureBtn.setSize(40, 20);
         captureBtn.addActionListener(new ActionListener(){
@@ -58,18 +70,32 @@ public class LetterRecognition {
 		BufferedImage image = webcam.getImage();
 
 		// save image to PNG file
-                try{
-                    ImageIO.write(image, "PNG", new File("test.png"));
+                /*try{
+                    
+                    //ImageIO.write(image, "PNG", new File("test.png"));
+                    notif.setText("Image captured");
+                    //Thread.sleep(2000);
+                    //notif.setText("Waiting...");
                 }
                 catch(IOException ex){
                     ex.printStackTrace();
                 }
+                catch (InterruptedException ex) {
+                    Logger.getLogger(LetterRecognition.class.getName()).log(Level.SEVERE, null, ex);
+                }*/
+                
+                image = p.BitColor(image);
+                image = p.CropImage(image);
+                p.OCR2(image);
             }
             
         });
         
         //Add all elements of Control Panel
+        controlPanel.setLayout(new BoxLayout(controlPanel,BoxLayout.X_AXIS));
+        controlPanel.add(notif);
         controlPanel.add(captureBtn);
+        
         
         //Add all sub panels to Main Panel
         mainPanel.setLayout(new BoxLayout(mainPanel,BoxLayout.Y_AXIS));
