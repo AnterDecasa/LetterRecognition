@@ -106,6 +106,7 @@ public class LetterRecognition {
                 image = p.CropImage(image);
                 p.OCRTrain(image);
                 displayImage = image;
+                //cleanImageSample.setIcon(new ImageIcon(image));
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
             }
             

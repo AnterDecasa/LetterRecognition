@@ -127,6 +127,22 @@ public class Processing {
     
     }
     
+    private int BlackOrWhiteSegment(BufferedImage image,int x, int y, int segmentWidth, int segmentHeight){
+        
+        int cnt = 0;
+        int segmentArea = segmentWidth * segmentHeight;
+        for(int i = 0; i < segmentHeight; i++){
+            for(int j = 0; j < segmentWidth; j++){
+                if(image.getRGB(x+j, y+i) != background){
+                    cnt++;
+                }
+            }
+        }
+        int RGB = (cnt > (int)(segmentArea * .35))? 1:0;
+        return RGB;
+        
+    }
+    
     public BufferedImage Rotate(BufferedImage image, double deg){
         
         AffineTransform tx = new AffineTransform();
@@ -159,7 +175,6 @@ public class Processing {
             for(int m = 0; m < height; m++){
                 image.setRGB(x,m,Color.red.getRGB());
             }
-            println(x + ","+ y);
         }
         
         return image;
@@ -175,7 +190,7 @@ public class Processing {
         int x = 0;
         int y = 0;
         
-        println("Removing darks edges");
+        println("Removing dark edges");
         
         //Check top edge
         for(int j = 0; j < width; j++){
@@ -323,14 +338,14 @@ public class Processing {
         
         int x;
         int y;
-        
+        println("Getting string pattern");
         //Identify string pattern
         for(int i = 0; i < segments; i++){
-            x = segmentWidth * i;
+            y = segmentHeight * i;
             for(int j = 0; j < segments; j++){
-                y = segmentHeight * j;
-                println(image.getRGB(x, y));
-                pattern  += BlackOrWhiteSegment(new Color(image.getRGB(x, y)));
+                x = segmentWidth * j;
+                //pattern  += BlackOrWhiteSegment(new Color(image.getRGB(x, y)));
+                pattern += BlackOrWhiteSegment(image,x,y,segmentWidth,segmentHeight);
             }
         }
         println(pattern);
