@@ -36,9 +36,9 @@ public class LetterRecognition {
     /**
      * @param args the command line arguments
      */
+    private static Processing p = new Processing(5);
     public static void main(String[] args) throws InterruptedException {
         
-        Processing p = new Processing(5);
         int ctr = 0;
         
         JFrame window = new JFrame("Test webcam panel");
@@ -67,11 +67,47 @@ public class LetterRecognition {
         
         //Create ABCDE,none buttons to be put in train control panel
         JButton aBtn = new JButton("A");
+        aBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"A");
+            }
+        });
         JButton bBtn = new JButton("B");
+        bBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"B");
+            }
+        });
         JButton cBtn = new JButton("C");
+        cBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"C");
+            }
+        });
         JButton dBtn = new JButton("D");
+        dBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"D");
+            }
+        });
         JButton eBtn = new JButton("E");
+        eBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"E");
+            }
+        });
         JButton noneBtn = new JButton("None");
+        noneBtn.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                addToDb(e,"None");
+            }
+        });
         
         //Add buttons to train Control panel
         trainControlPanel.add(aBtn);
@@ -104,10 +140,13 @@ public class LetterRecognition {
                 image = p.BitColor(image);
                 image = p.removeDarkEdges(image);
                 image = p.CropImage(image);
-                p.OCRTrain(image);
                 displayImage = image;
                 //cleanImageSample.setIcon(new ImageIcon(image));
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
+                String pattern = p.createStringPattern(image);
+                Processing.currImage = image;
+                Processing.pattern = pattern;
+                
             }
             
         });
@@ -136,6 +175,15 @@ public class LetterRecognition {
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.pack();
         window.setVisible(true);
+    }
+    
+    //action for ABCDE buttons
+    private static void addToDb(ActionEvent evt, String letter){
+        
+        if(!letter.equalsIgnoreCase("none")){
+            p.storeToDB(Processing.pattern, letter);
+        }
+        
     }
     
 }

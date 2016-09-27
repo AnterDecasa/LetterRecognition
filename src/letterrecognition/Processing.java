@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -20,6 +21,9 @@ import java.util.Queue;
  * @author anter_000
  */
 public class Processing {
+    
+    public static BufferedImage currImage = null;
+    public static String pattern = "";
     
     private String url = "jdbc:mysql://localhost/imageproc";
     private String username = "root";
@@ -327,7 +331,7 @@ public class Processing {
         }
     }
     
-    public void OCRTrain(BufferedImage image){
+    public String createStringPattern(BufferedImage image){
 		
 	String pattern = "";
 	
@@ -349,6 +353,23 @@ public class Processing {
             }
         }
         println(pattern);
+        
+        return pattern;
+        
+    }
+    
+    public void storeToDB(String pattern, String letter){
+        println("Storing to database: " + pattern + " " + letter);
+        try{
+            Statement stmt = connect.createStatement();
+            String sql;
+            sql = "INSERT into lettersegment (letter, pattern) VALUES ('"+ letter + "','" + pattern +"')";
+            stmt.executeUpdate(sql);
+            println("Data successfully stored");
+        }
+        catch(SQLException ex){
+            println("Not able to add data!");
+        }    
         
     }
     
