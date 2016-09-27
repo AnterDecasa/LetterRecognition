@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -43,7 +44,8 @@ public class LetterRecognition {
         JFrame window = new JFrame("Test webcam panel");
         
         JPanel mainPanel = new JPanel();
-        JPanel controlPanel = new JPanel();
+        JPanel captureControlPanel = new JPanel();
+        JPanel trainPanel = new JPanel();
         
         //Access the webCam
         Webcam webcam = Webcam.getDefault();
@@ -55,11 +57,33 @@ public class LetterRecognition {
         liveFeedPanel.setImageSizeDisplayed(true);
         liveFeedPanel.setMirrored(true);
         
-        //Create the Control Panel
-        //Notification
-        JLabel notif = new JLabel();
-        notif.setText("Waiting...");
-        notif.setVisible(true);
+        //Create Training Panel
+        //Clean image display
+        JLabel cleanImageSample = new JLabel();
+        
+        //Create traing control panel
+        JPanel trainControlPanel = new JPanel();
+        trainControlPanel.setLayout(new BoxLayout(trainControlPanel,BoxLayout.X_AXIS));
+        
+        //Create ABCDE,none buttons to be put in train control panel
+        JButton aBtn = new JButton("A");
+        JButton bBtn = new JButton("B");
+        JButton cBtn = new JButton("C");
+        JButton dBtn = new JButton("D");
+        JButton eBtn = new JButton("E");
+        JButton noneBtn = new JButton("None");
+        
+        //Add buttons to train Control panel
+        trainControlPanel.add(aBtn);
+        trainControlPanel.add(bBtn);
+        trainControlPanel.add(cBtn);
+        trainControlPanel.add(dBtn);
+        trainControlPanel.add(eBtn);
+        trainControlPanel.add(noneBtn);
+        
+        //End of create Training Panel
+        
+        //Create Capture Control Panel
         //Capture Button
         JButton captureBtn = new JButton("Capture");
         captureBtn.setSize(40, 20);
@@ -67,40 +91,42 @@ public class LetterRecognition {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // get image
-		BufferedImage image = webcam.getImage();
-
-		// save image to PNG file
-                /*try{
-                    
-                    //ImageIO.write(image, "PNG", new File("test.png"));
-                    notif.setText("Image captured");
-                    //Thread.sleep(2000);
-                    //notif.setText("Waiting...");
+		//BufferedImage image = webcam.getImage();
+                BufferedImage image = null;
+                BufferedImage displayImage = null;
+                try{
+                    image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\letter1 - Copy.png"));
                 }
                 catch(IOException ex){
-                    ex.printStackTrace();
+                    System.out.println("Cannot find image");
                 }
-                catch (InterruptedException ex) {
-                    Logger.getLogger(LetterRecognition.class.getName()).log(Level.SEVERE, null, ex);
-                }*/
                 
                 image = p.BitColor(image);
+                image = p.removeDarkEdges(image);
                 image = p.CropImage(image);
                 p.OCRTrain(image);
+                displayImage = image;
+                cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
             }
             
         });
         
-        //Add all elements of Control Panel
-        controlPanel.setLayout(new BoxLayout(controlPanel,BoxLayout.X_AXIS));
-        controlPanel.add(notif);
-        controlPanel.add(captureBtn);
+        //End of Create the Control Panel
         
+        //Add all elements of Capture Control Panel
+        captureControlPanel.setLayout(new BoxLayout(captureControlPanel,BoxLayout.X_AXIS));
+        captureControlPanel.add(captureBtn);
+        
+        //Add all elements of Training Panel
+        trainPanel.setLayout(new BoxLayout(trainPanel,BoxLayout.Y_AXIS));
+        trainPanel.add(cleanImageSample);
+        trainPanel.add(trainControlPanel);
         
         //Add all sub panels to Main Panel
         mainPanel.setLayout(new BoxLayout(mainPanel,BoxLayout.Y_AXIS));
         mainPanel.add(liveFeedPanel);
-        mainPanel.add(controlPanel);
+        mainPanel.add(captureControlPanel);
+        mainPanel.add(trainPanel);
         mainPanel.setVisible(true);
         
         //Set Window

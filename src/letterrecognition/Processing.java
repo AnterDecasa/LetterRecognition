@@ -9,6 +9,11 @@ import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  *
@@ -16,19 +21,31 @@ import java.awt.image.BufferedImage;
  */
 public class Processing {
     
+    private String url = "jdbc:mysql://localhost/imageproc";
+    private String username = "root";
+    private String password = "";
+    private Connection connect = null;
+    
     private int background = Color.WHITE.getRGB();
     private int segments = 1;
-    private int imageWidth = 0;
-    private int imageHeight = 0;
-    private int segmentWidth = imageWidth/segments;
-    private int segmentHeight = imageHeight/segments;
     
     public Processing(int seg){
         segments = seg;
+        System.out.println("Connecting to database...");
+        
+        try{
+            connect = DriverManager.getConnection(url,username,password);
+            println("Database connected.");
+        }
+        catch(SQLException e){
+            println("Not able to connect!!");
+        }
+        
     }
     
     public BufferedImage BitColor(BufferedImage image){
-	for(int x = 0; x < image.getWidth(); x++){
+	println("Turning image to black and white");
+        for(int x = 0; x < image.getWidth(); x++){
             for(int y = 0; y < image.getHeight(); y++){
 		Color color = new Color(image.getRGB(x, y));
 		int red = (int)(color.getRed());
@@ -43,7 +60,7 @@ public class Processing {
     }
     
     public BufferedImage CropImage(BufferedImage image){
-			
+	println("Cropping image");		
         int Xmin = image.getWidth();
 	int Xmax = 0;
         int Ymin = image.getHeight();
@@ -78,8 +95,7 @@ public class Processing {
 	}
 	while(newImage.getWidth() < 200 || newImage.getHeight() < 200){
             newImage = ZoomIn(newImage);
-	}
-		
+	}	
 		
 	return newImage;
     }
@@ -123,43 +139,187 @@ public class Processing {
         
     }
     
-    private BufferedImage drawSegments(BufferedImage image){
+    public BufferedImage drawSegments(BufferedImage image){
         
+        int x = 0;
+        int y = 0;
         int width = image.getWidth();
         int height = image.getHeight();
         int segmentWidth = width/segments;
         int segmentHeight = height/segments;
         
-        int x = segmentWidth;
-        int y = segmentHeight;
-        for(int i=0; i < height; i++){
-            image.setRGB(x,i,Color.red.getRGB());
-        }
-        x += segmentWidth;
-        for(int i=0; i < height; i++){
-            image.setRGB(x,i,Color.red.getRGB());
-        }
+        println("Draw sample segmented image");
         
-        for(int j=0; j < width; j++){
-            image.setRGB(j,y,Color.red.getRGB());
-        }
-        y+= segmentHeight;
-        for(int j=0; j < width; j++){
-            image.setRGB(j,y,Color.red.getRGB());
+        for(int i = 1; i < segments; i++){
+            x = segmentWidth * i;
+            y = segmentHeight * i;
+            for(int n = 0; n < width; n++){
+                image.setRGB(n, y, Color.red.getRGB());
+            }
+            for(int m = 0; m < height; m++){
+                image.setRGB(x,m,Color.red.getRGB());
+            }
+            println(x + ","+ y);
         }
         
         return image;
     
     }
     
+    public BufferedImage removeDarkEdges(BufferedImage image){
+        
+        Queue queue = new LinkedList();
+        
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int x = 0;
+        int y = 0;
+        
+        println("Removing darks edges");
+        
+        //Check top edge
+        for(int j = 0; j < width; j++){
+            int curRGB = image.getRGB(j, y);
+            if (background != curRGB){
+                image.setRGB(j, y, background);
+                queue.add(new int[]{j,y});
+                    
+                do{
+                    int[] wh = (int[]) queue.poll();
+                    if(null!=wh){
+                        int qw = wh[0];
+                        int qh = wh[1];
+                            
+                        //Check Straight Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh);
+                        checkPixelLabel(image, queue,qw-1,qh);
+                        checkPixelLabel(image, queue,qw,qh+1);
+                        checkPixelLabel(image, queue,qw,qh-1);
+                            
+                        //Check Slant Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh+1);
+                        checkPixelLabel(image, queue,qw-1,qh-1);
+                        checkPixelLabel(image, queue,qw+1,qh-1);
+                        checkPixelLabel(image, queue,qw-1,qh+1);
+                    }
+                }while(!queue.isEmpty());
+            }
+        }
+        //check left edge
+        for(int i = 0; i < height; i++){
+            int curRGB = image.getRGB(x, i);
+            if (background != curRGB){
+                image.setRGB(x, i, background);
+                queue.add(new int[]{x,i});
+                    
+                do{
+                    int[] wh = (int[]) queue.poll();
+                    if(null!=wh){
+                        int qw = wh[0];
+                        int qh = wh[1];
+                            
+                        //Check Straight Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh);
+                        checkPixelLabel(image, queue,qw-1,qh);
+                        checkPixelLabel(image, queue,qw,qh+1);
+                        checkPixelLabel(image, queue,qw,qh-1);
+                            
+                        //Check Slant Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh+1);
+                        checkPixelLabel(image, queue,qw-1,qh-1);
+                        checkPixelLabel(image, queue,qw+1,qh-1);
+                        checkPixelLabel(image, queue,qw-1,qh+1);
+                    }
+                }while(!queue.isEmpty());
+            }
+        }
+        
+        //check bottom edge
+        y = height-1;
+        for(int j = 0; j < width; j++){
+            int curRGB = image.getRGB(j, y);
+            if (background != curRGB){
+                image.setRGB(j, y, background);
+                queue.add(new int[]{j,y});
+                    
+                do{
+                    int[] wh = (int[]) queue.poll();
+                    if(null!=wh){
+                        int qw = wh[0];
+                        int qh = wh[1];
+                            
+                        //Check Straight Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh);
+                        checkPixelLabel(image, queue,qw-1,qh);
+                        checkPixelLabel(image, queue,qw,qh+1);
+                        checkPixelLabel(image, queue,qw,qh-1);
+                            
+                        //Check Slant Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh+1);
+                        checkPixelLabel(image, queue,qw-1,qh-1);
+                        checkPixelLabel(image, queue,qw+1,qh-1);
+                        checkPixelLabel(image, queue,qw-1,qh+1);
+                    }
+                }while(!queue.isEmpty());
+            }
+        }
+        
+        //check right edge
+        x = width-1;
+        for(int i = 0; i < height; i++){
+            int curRGB = image.getRGB(x, i);
+            if (background != curRGB){
+                image.setRGB(x, i, background);
+                queue.add(new int[]{x,i});
+                    
+                do{
+                    int[] wh = (int[]) queue.poll();
+                    if(null!=wh){
+                        int qw = wh[0];
+                        int qh = wh[1];
+                            
+                        //Check Straight Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh);
+                        checkPixelLabel(image, queue,qw-1,qh);
+                        checkPixelLabel(image, queue,qw,qh+1);
+                        checkPixelLabel(image, queue,qw,qh-1);
+                            
+                        //Check Slant Neighbors
+                        checkPixelLabel(image, queue,qw+1,qh+1);
+                        checkPixelLabel(image, queue,qw-1,qh-1);
+                        checkPixelLabel(image, queue,qw+1,qh-1);
+                        checkPixelLabel(image, queue,qw-1,qh+1);
+                    }
+                }while(!queue.isEmpty());
+            }
+        }
+        
+        return image;
+        
+    }
+        
+    private void checkPixelLabel(BufferedImage image, Queue queue,int w, int h){
+        int height = image.getHeight();
+        int width = image.getWidth();
+        
+        if (w!=-1 && h!=-1 
+                && w<width && h<height){
+            int curRGB = image.getRGB(w, h);
+            if (background != curRGB){
+                image.setRGB(w, h, background);
+                queue.add(new int[]{w,h});
+            }
+        }
+    }
+    
     public void OCRTrain(BufferedImage image){
 		
 	String pattern = "";
 	
-        imageWidth = image.getWidth();
-        imageHeight = image.getHeight();
-        segmentWidth = imageWidth/segments;
-        segmentHeight = imageHeight/segments;
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        int segmentWidth = imageWidth/segments;
+        int segmentHeight = imageHeight/segments;
         
         int x;
         int y;
@@ -167,9 +327,13 @@ public class Processing {
         //Identify string pattern
         for(int i = 0; i < segments; i++){
             x = segmentWidth * i;
-            y = segmentHeight * i;
-            pattern  += BlackOrWhiteSegment(new Color(image.getRGB(x, y)));
+            for(int j = 0; j < segments; j++){
+                y = segmentHeight * j;
+                println(image.getRGB(x, y));
+                pattern  += BlackOrWhiteSegment(new Color(image.getRGB(x, y)));
+            }
         }
+        println(pattern);
         
     }
     
