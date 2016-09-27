@@ -86,7 +86,7 @@ public class LetterRecognition {
                 
                 image = p.BitColor(image);
                 image = p.CropImage(image);
-                p.OCR2(image);
+                p.OCRTrain(image);
             }
             
         });

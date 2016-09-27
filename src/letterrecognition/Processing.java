@@ -6,6 +6,8 @@
 package letterrecognition;
 
 import java.awt.Color;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 
 /**
@@ -15,7 +17,7 @@ import java.awt.image.BufferedImage;
 public class Processing {
     
     private int background = Color.WHITE.getRGB();
-    private int segments = 0;
+    private int segments = 1;
     private int imageWidth = 0;
     private int imageHeight = 0;
     private int segmentWidth = imageWidth/segments;
@@ -109,7 +111,48 @@ public class Processing {
     
     }
     
-    public void OCR2(BufferedImage image){
+    public BufferedImage Rotate(BufferedImage image, double deg){
+        
+        AffineTransform tx = new AffineTransform();
+        tx.rotate(deg * (Math.PI/180), image.getWidth()/2, image.getHeight()/2);
+        
+        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+        image = op.filter(image, null);
+        
+        return image;
+        
+    }
+    
+    private BufferedImage drawSegments(BufferedImage image){
+        
+        int width = image.getWidth();
+        int height = image.getHeight();
+        int segmentWidth = width/segments;
+        int segmentHeight = height/segments;
+        
+        int x = segmentWidth;
+        int y = segmentHeight;
+        for(int i=0; i < height; i++){
+            image.setRGB(x,i,Color.red.getRGB());
+        }
+        x += segmentWidth;
+        for(int i=0; i < height; i++){
+            image.setRGB(x,i,Color.red.getRGB());
+        }
+        
+        for(int j=0; j < width; j++){
+            image.setRGB(j,y,Color.red.getRGB());
+        }
+        y+= segmentHeight;
+        for(int j=0; j < width; j++){
+            image.setRGB(j,y,Color.red.getRGB());
+        }
+        
+        return image;
+    
+    }
+    
+    public void OCRTrain(BufferedImage image){
 		
 	String pattern = "";
 	
@@ -121,6 +164,7 @@ public class Processing {
         int x;
         int y;
         
+        //Identify string pattern
         for(int i = 0; i < segments; i++){
             x = segmentWidth * i;
             y = segmentHeight * i;
