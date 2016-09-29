@@ -6,9 +6,11 @@
 package letterrecognition;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,7 +25,10 @@ import java.util.Queue;
 public class Processing {
     
     public static BufferedImage currImage = null;
-    public static String pattern = "";
+    public static String segmentPattern = "";
+    public static String columnPercent = "";
+    public static String rowPercent = "";
+    public static float areaPercent = 0f;
     
     private String url = "jdbc:mysql://localhost/imageproc";
     private String username = "root";
@@ -56,12 +61,159 @@ public class Processing {
 		int green = (int)(color.getGreen());
 		int blue = (int)(color.getBlue());
 		int RGB = red+green+blue;
-		RGB = (RGB/3 > 75)? 255 : 0 ;
+		RGB = (RGB/3 > 60)? 255 : 0 ;
 		image.setRGB(x, y, new Color(RGB, RGB, RGB).getRGB() );
             }
 	}	
 		return image;
     }
+    
+    public BufferedImage grayScale(BufferedImage image){
+        
+        BufferedImage grayScaleImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+        
+        println("Turning image to grayscale");
+        
+        for (int i = 0; i < image.getHeight(); i++){
+            for(int j = 0; j < image.getWidth(); j++){
+                Color c = new Color(image.getRGB(j,i));
+                int red = (int)(c.getRed());
+                int green = (int)(c.getGreen());
+                int blue = (int)(c.getBlue());
+                Color newColor = new Color((red+green+blue)/3, (red+green+blue)/3, (red+green+blue)/3);
+                grayScaleImage.setRGB(j, i, newColor.getRGB());
+            }
+        }
+        
+        return grayScaleImage;
+               
+    }
+    
+    public BufferedImage HistogramEqualizationImage(BufferedImage image){
+		
+	int len = 256;
+	double array[] = new double[len];
+	int cp[] = new int[len];
+	int max = 0;
+	int total = image.getWidth() * image.getHeight();
+	int intensity = 255;
+		
+	//Checks if image is gray scale
+	if(!IsGrayscale(image)){
+            //image get the gray scale of colored image
+            image = Luminosity(image);
+	}
+		
+	//initializes array;
+	for(int i = 0 ; i < len ; i++){
+            array[i] = 0;
+	}
+	//fill array with data
+	for(int x = 0 ; x < image.getWidth() ; x++ ){ 
+            for(int y = 0 ; y < image.getHeight() ; y++){
+		Color color = new Color(image.getRGB(x, y));
+		array[color.getBlue()]++;
+            }
+	}
+	//probability
+	for(int i = 0 ; i < len ; i++){
+            array[i] = array[i] / total;
+	}
+	//cumulative probability
+	for(int i = 1 ; i < len ; i++){
+            array[i] = array[i - 1] + array[i];
+	}
+	//cumulative probability * intensity
+	for(int i = 1 ; i < len ; i++){
+            cp[i] = (int) Math.floor(array[i] * intensity);
+	}
+		
+        //takes the highest possible graph height
+	for(int i = 0 ; i < 256; i++ ){
+            if(array[i] > max){
+		max = (int) array[i];
+            }
+        }
+		
+	BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight() ,BufferedImage.TYPE_INT_RGB);
+	//graphs the histogram
+	for(int x = 0 ; x < image.getWidth() ; x++ ){ 
+            for(int y = 0 ; y < image.getHeight() ; y++){
+		Color color = new Color(image.getRGB(x, y));
+		newImage.setRGB(x, y, new Color(cp[color.getBlue()],cp[color.getBlue()],cp[color.getBlue()]).getRGB());
+		//System.out.println(color.getBlue());
+            }
+	}
+	return newImage;
+    }
+    
+    private BufferedImage Luminosity(BufferedImage image){
+	for( int x = 0 ; x < image.getWidth() ; x++ ){
+            for( int y = 0 ; y < image.getHeight() ; y++){
+		Color color = new Color(image.getRGB(x, y));
+                int red = (int)(color.getRed()     * 0.21);
+		int green = (int)(color.getGreen() * 0.72);
+		int blue = (int)(color.getBlue()   * 0.07);
+		int RGB = red+green+blue;
+		Color newColor = new Color(RGB , RGB, RGB);
+		image.setRGB(x, y, newColor.getRGB());
+            }
+	}
+		
+	return image;	
+    }
+    
+    private boolean IsGrayscale(BufferedImage image){
+	int count = 0;
+	int total = image.getWidth() * image.getHeight();
+	for(int x = 0 ; x < image.getWidth() ; x++ ){ 
+            for(int y = 0 ; y < image.getHeight() ; y++){
+		Color color = new Color(image.getRGB(x, y));
+		//if red, green, and blue has the same value then its a shade of gray
+		if(color.getRed() == color.getGreen() && color.getGreen() == color.getBlue()){
+                    count++;
+		}
+            }
+	}
+	return (count == total)? true : false;
+		
+    }
+    
+    public BufferedImage getNoise(BufferedImage image){
+         
+        println("Removing noise");
+        for( int x = 0 ; x < image.getWidth() - 50 ; x++){
+            for(int y = 0  ; y < image.getHeight() - 50 ; y++){
+                int tr = 0; 
+                for(int ctr = 0; tr!=1 && ctr < 50; ctr++){
+                    if(image.getRGB(x+ctr, y) != Color.black.getRGB()){
+                        tr = 1;
+                    }
+                    if(image.getRGB(x+ctr, y+50) != Color.black.getRGB()){
+                        tr = 1;
+                    }
+                    if(image.getRGB(x, y+ctr) != Color.black.getRGB()){
+                        tr = 1;
+                    }
+                    if(image.getRGB(x+50, y+ctr) != Color.black.getRGB()){
+                        tr = 1;
+                    }
+                }
+                            
+                if(tr!=1){
+                    for( int x0 = x ; x0 < x+50 ; x0++){
+                        for(int y0 = y  ; y0 < y+50 ; y0++){
+                            image.setRGB(x0, y0, 0);
+                        }
+                    }
+                }
+            }
+                                    
+        }
+
+        return image;
+    }
+        
     
     public BufferedImage CropImage(BufferedImage image){
 	println("Cropping image");		
@@ -147,16 +299,32 @@ public class Processing {
         
     }
     
-    public BufferedImage Rotate(BufferedImage image, double deg){
+    public BufferedImage Rotate(BufferedImage image, double angle){
         
-        AffineTransform tx = new AffineTransform();
-        tx.rotate(deg * (Math.PI/180), image.getWidth()/2, image.getHeight()/2);
+        int w = image.getWidth();
+        int h = image.getHeight();
+        BufferedImage newImage = new BufferedImage(w, h, image.getType());
+        setWhiteBackground(newImage);
+        Graphics2D g = newImage.createGraphics();
+        g.rotate(Math.toRadians(angle), w / 2, h / 2);
+        g.drawImage(image, null, 0, 0);
+        return newImage;
         
-        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
-        image = op.filter(image, null);
+    }
+    
+    private BufferedImage setWhiteBackground(BufferedImage image){
         
+        int width = image.getWidth();
+        int height = image.getHeight();
+        
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                image.setRGB(j, i, Color.white.getRGB());
+            }
+        }
+            
         return image;
-        
+    
     }
     
     public BufferedImage drawSegments(BufferedImage image){
@@ -331,7 +499,7 @@ public class Processing {
         }
     }
     
-    public String createStringPattern(BufferedImage image){
+    public String createSegmentPattern(BufferedImage image){
 		
 	String pattern = "";
 	
@@ -342,8 +510,8 @@ public class Processing {
         
         int x;
         int y;
-        println("Getting string pattern");
-        //Identify string pattern
+        println("Getting segment string pattern");
+        //Identify string segmentPattern
         for(int i = 0; i < segments; i++){
             y = segmentHeight * i;
             for(int j = 0; j < segments; j++){
@@ -356,6 +524,102 @@ public class Processing {
         
         return pattern;
         
+    }
+    
+    public float getBlackToWhiteRatio(BufferedImage image){
+        
+        double retVal = 0f;
+        
+        int width = image.getWidth();
+        int height = image.getHeight();
+        double totalArea = width * height;
+        double count = 0;
+        
+        println("Getting total black to white ratio");
+        
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                if(image.getRGB(j,i) != background){
+                    count++;
+                }
+            }
+        }
+        retVal = count/totalArea*100;
+        //retVal = Float.parseFloat(String.format("%.2f,",retVal));
+        
+        println(retVal);
+        
+        return (float)retVal;
+    
+    }    
+    
+    public String createRowPattern(BufferedImage image){
+        String pattern = "";
+        
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        int segmentHeight = imageHeight/segments;
+        int y = 0;
+        double blackCnt = 0;
+        double columnArea = segmentHeight * imageWidth;
+        double blackToWhiteRatio = 0f;
+        
+        println("Creating row black to white pixel ratio string pattern");
+        
+        for(int cnt = 0; cnt < segments; cnt++){
+            y  = segmentHeight * cnt;
+            blackCnt = 0;
+            
+            for(int j = 0; j < imageWidth; j++){
+                for(int i = 0; i < segmentHeight; i++){
+                    if(image.getRGB(j,y+i) != background){
+                        blackCnt++;
+                    }
+                }
+            }
+            blackToWhiteRatio = blackCnt/columnArea*100;
+            pattern += String.format("%.2f",blackToWhiteRatio) + "";
+            if(cnt < segments-1){
+                pattern += ",";
+            }
+        }
+        println(pattern);
+        
+        return pattern;
+    }
+    
+    public String createColumnPattern(BufferedImage image){
+        String pattern = "";
+        
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        int segmentWidth = imageWidth/segments;
+        int x = 0;
+        double blackCnt = 0;
+        double columnArea = segmentWidth * imageHeight;
+        double blackToWhiteRatio = 0f;
+        
+        println("Creating column black to white pixel ratio string pattern");
+        
+        for(int cnt = 0; cnt < segments; cnt++){
+            x  = segmentWidth * cnt;
+            blackCnt = 0;
+            for(int i = 0; i < imageHeight; i++){
+                for(int j = 0; j < segmentWidth; j++){
+                    if(image.getRGB(x+j,i) != background){
+                        blackCnt++;
+                    }
+                }
+            }
+            blackToWhiteRatio = blackCnt/columnArea*100;
+            pattern += String.format("%.2f",blackToWhiteRatio) + "";
+            if(cnt < segments-1){
+                pattern += ",";
+            }
+        }
+        println(pattern);
+        
+        return pattern;
     }
     
     public void storeToDB(String pattern, String letter){
@@ -388,6 +652,11 @@ public class Processing {
     private void println(float decimal){
 	System.out.println(decimal);
     }
+    
+    private void println(double decimal){
+        System.out.println(decimal);
+    }
+    
     private void println(){
         System.out.println();
     }

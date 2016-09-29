@@ -127,25 +127,32 @@ public class LetterRecognition {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // get image
-		//BufferedImage image = webcam.getImage();
-                BufferedImage image = null;
+		BufferedImage image = webcam.getImage();
+                //BufferedImage image = null;
                 BufferedImage displayImage = null;
-                try{
+                /*try{
                     image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\letter1 - Copy.png"));
                 }
                 catch(IOException ex){
                     System.out.println("Cannot find image");
                 }
-                
+                */
                 image = p.BitColor(image);
                 image = p.removeDarkEdges(image);
                 image = p.CropImage(image);
+                
                 displayImage = image;
                 //cleanImageSample.setIcon(new ImageIcon(image));
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
-                String pattern = p.createStringPattern(image);
+                String segmentPattern = p.createSegmentPattern(image);
+                String columnPattern = p.createColumnPattern(image);
+                String rowPattern = p.createRowPattern(image);
+                float blackToWhiteRatio = p.getBlackToWhiteRatio(image);
                 Processing.currImage = image;
-                Processing.pattern = pattern;
+                Processing.segmentPattern = segmentPattern;
+                Processing.columnPercent = columnPattern;
+                Processing.rowPercent = rowPattern;
+                Processing.areaPercent = blackToWhiteRatio;
                 
             }
             
@@ -181,7 +188,7 @@ public class LetterRecognition {
     private static void addToDb(ActionEvent evt, String letter){
         
         if(!letter.equalsIgnoreCase("none")){
-            p.storeToDB(Processing.pattern, letter);
+            p.storeToDB(Processing.segmentPattern, letter);
         }
         
     }
