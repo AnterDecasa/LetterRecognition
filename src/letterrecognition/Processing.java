@@ -11,8 +11,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedList;
@@ -528,7 +530,8 @@ public class Processing {
     
     public float getBlackToWhiteRatio(BufferedImage image){
         
-        double retVal = 0f;
+        double tempRetVal = 0f;
+        float retVal = 0f;
         
         int width = image.getWidth();
         int height = image.getHeight();
@@ -544,12 +547,16 @@ public class Processing {
                 }
             }
         }
-        retVal = count/totalArea*100;
-        //retVal = Float.parseFloat(String.format("%.2f,",retVal));
+        tempRetVal = count/totalArea*100;
+        retVal = (float) tempRetVal;
+        
+        BigDecimal bd = new BigDecimal(Float.toString(retVal));
+        bd = bd.setScale(2,BigDecimal.ROUND_HALF_UP);
+        retVal = bd.floatValue();
         
         println(retVal);
         
-        return (float)retVal;
+        return retVal;
     
     }    
     
@@ -627,7 +634,8 @@ public class Processing {
         try{
             Statement stmt = connect.createStatement();
             String sql;
-            sql = "INSERT into lettersegment (letter, pattern) VALUES ('"+ letter + "','" + pattern +"')";
+            sql = "INSERT into lettersegment (letter, pattern, columnPercentPattern, rowPercentPattern, totalPercent)";
+            sql += "VALUES ('"+ letter + "','" + pattern +"','"+ columnPercent +"','"+ rowPercent +"',"+ areaPercent +")";
             stmt.executeUpdate(sql);
             println("Data successfully stored");
         }
@@ -635,6 +643,32 @@ public class Processing {
             println("Not able to add data!");
         }    
         
+    }
+    
+    public void guessLetter(String pattern){
+        println("Guessing....");
+        try{
+            Statement stmnt = connect.createStatement();
+            String sql;
+            sql = "SELECT * FROM lettersegment WHERE pattern = " + pattern;
+            ResultSet results = stmnt.executeQuery(sql);
+            int cnt = 0;
+            while(results.next()){
+                cnt++;
+                println(cnt);
+            }
+            if(cnt != 0){
+                
+                println("Results are available");
+                results.first();
+                String guessLetter = results.getString("letter");
+                println(guessLetter + "");
+                
+            }
+        }
+        catch(SQLException ex){
+            println();
+        }
     }
     
     private void println(String string){

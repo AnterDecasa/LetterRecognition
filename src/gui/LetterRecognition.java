@@ -23,9 +23,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import letterrecognition.Processing;
-//import org.opencv.core.Core;
-//import org.opencv.core.CvType;
-//import org.opencv.core.Mat;
 
 /**
  *
@@ -55,13 +52,15 @@ public class LetterRecognition {
         liveFeedPanel.setFPSDisplayed(true);
         liveFeedPanel.setDisplayDebugInfo(true);
         liveFeedPanel.setImageSizeDisplayed(true);
-        liveFeedPanel.setMirrored(true);
+        //liveFeedPanel.setMirrored(true);
         
         //Create Training Panel
         //Clean image display
         JLabel cleanImageSample = new JLabel();
+        //Containter for guess letter
+        JLabel guessLetter = new JLabel();
         
-        //Create traing control panel
+        //Create training control panel
         JPanel trainControlPanel = new JPanel();
         trainControlPanel.setLayout(new BoxLayout(trainControlPanel,BoxLayout.X_AXIS));
         
@@ -88,7 +87,7 @@ public class LetterRecognition {
             }
         });
         JButton dBtn = new JButton("D");
-        dBtn.addActionListener(new ActionListener(){
+        dBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 addToDb(e,"D");
@@ -135,14 +134,13 @@ public class LetterRecognition {
                 }
                 catch(IOException ex){
                     System.out.println("Cannot find image");
-                }
-                */
+                }*/
+                
                 image = p.BitColor(image);
                 image = p.removeDarkEdges(image);
                 image = p.CropImage(image);
                 
                 displayImage = image;
-                //cleanImageSample.setIcon(new ImageIcon(image));
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
                 String segmentPattern = p.createSegmentPattern(image);
                 String columnPattern = p.createColumnPattern(image);
@@ -153,6 +151,7 @@ public class LetterRecognition {
                 Processing.columnPercent = columnPattern;
                 Processing.rowPercent = rowPattern;
                 Processing.areaPercent = blackToWhiteRatio;
+                p.guessLetter(segmentPattern);
                 
             }
             
@@ -167,6 +166,7 @@ public class LetterRecognition {
         //Add all elements of Training Panel
         trainPanel.setLayout(new BoxLayout(trainPanel,BoxLayout.Y_AXIS));
         trainPanel.add(cleanImageSample);
+        trainPanel.add(guessLetter);
         trainPanel.add(trainControlPanel);
         
         //Add all sub panels to Main Panel
