@@ -10,6 +10,8 @@ import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -130,7 +132,7 @@ public class LetterRecognition {
                 //BufferedImage image = null;
                 BufferedImage displayImage = null;
                 /*try{
-                    image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\letter1 - Copy.png"));
+                    image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\underline_A.png"));
                 }
                 catch(IOException ex){
                     System.out.println("Cannot find image");
@@ -139,6 +141,8 @@ public class LetterRecognition {
                 image = p.BitColor(image);
                 image = p.removeDarkEdges(image);
                 image = p.CropImage(image);
+                
+                //image = p.StandUp2(image);
                 
                 displayImage = image;
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
@@ -156,6 +160,57 @@ public class LetterRecognition {
             }
             
         });
+        captureBtn.addKeyListener(new KeyListener(){
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if(c == KeyEvent.VK_ENTER || c == KeyEvent.VK_SPACE){
+                    // get image
+                    BufferedImage image = webcam.getImage();
+                    //BufferedImage image = null;
+                    BufferedImage displayImage = null;
+                    /*try{
+                        image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\underline_A.png"));
+                    }
+                    catch(IOException ex){
+                        System.out.println("Cannot find image");
+                    }*/
+                
+                    image = p.BitColor(image);
+                    image = p.removeDarkEdges(image);
+                    image = p.CropImage(image);
+                
+                    //image = p.StandUp2(image);
+                
+                    displayImage = image;
+                    cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
+                    String segmentPattern = p.createSegmentPattern(image);
+                    String columnPattern = p.createColumnPattern(image);
+                    String rowPattern = p.createRowPattern(image);
+                    float blackToWhiteRatio = p.getBlackToWhiteRatio(image);
+                    Processing.currImage = image;
+                    Processing.segmentPattern = segmentPattern;
+                    Processing.columnPercent = columnPattern;
+                    Processing.rowPercent = rowPattern;
+                    Processing.areaPercent = blackToWhiteRatio;
+                    p.guessLetter(segmentPattern);
+                }
+                else{
+                    e.consume();
+                }
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                e.consume();
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                e.consume();
+            }
+        });
+     
         
         //End of Create the Control Panel
         

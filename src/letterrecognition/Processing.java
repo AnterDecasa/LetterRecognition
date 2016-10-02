@@ -694,5 +694,365 @@ public class Processing {
     private void println(){
         System.out.println();
     }
+    
+    
+    
+    public BufferedImage StandUp2(BufferedImage image){
+
+            image = BlackWhite2(image);
+            image = BlueWhite2(image);
+            image = CropImage2(image);
+
+            if(IsVertical(image)){
+                    image = Rotate2(image,90);
+            }else if(IsHorizantal(image)){
+                    image = Rotate2(image,0); // i'm not kidding
+            }else{
+                    removeBlack(image);
+                    image = NinetyDegrees(image);
+                    image = CropImage2(image);
+                    }
+            image = IsUpSideDown(image);	
+            image = NIggaWhite(image);
+
+            image = RemoveLine(image);
+            return image;
+    }
+
+    public boolean IsHorizantal(BufferedImage image){	
+            boolean retval = false;
+            int maxX = 0;
+            for(int y = 0; y < image.getHeight(); y++){
+                    for(int x = 0; x < image.getWidth(); x++){
+                            if(image.getRGB(x, y) == Color.WHITE.getRGB()){
+                                    maxX = (maxX < x)? x : maxX;
+                                    image.setRGB(x, y, 0);
+                                    if(x == image.getWidth() -1){
+                                            break;
+                                    }
+                            }else{
+                                    break;
+                            }
+                    }
+            }
+
+            if(maxX == image.getWidth() -1){
+                    retval = true;
+            }
+            System.out.println("Horizantal : " + retval);
+            return retval;
+    }
+
+
+    public boolean IsVertical(BufferedImage image){	
+            boolean retval = false;
+            int maxY = 0;
+            for(int x = 0; x < image.getWidth(); x++){	
+                    for(int y = 0; y < image.getHeight(); y++){
+                            if(image.getRGB(x, y) == Color.WHITE.getRGB()){
+                                    maxY = (maxY < y)? y : maxY;
+                                    image.setRGB(x, y, 0);
+                                    if(x == image.getHeight() -1){
+                                            break;
+                                    }
+                            }else{
+                                    break;
+                            }
+                    }
+            }
+
+            if(maxY == image.getHeight() -1){
+                    retval = true;
+            }
+            System.out.println("Vertical : " + retval);
+            return retval;
+    }
+
+
+    public BufferedImage IsUpSideDown(BufferedImage image){
+
+            int upDown = image.getHeight()/2;
+            int maxX = 0;
+            int maxY = 0; // height of white space from above
+
+            for(int y = 0; y < image.getHeight(); y++){
+                    for(int x = 0; x < image.getWidth(); x++){
+                            if(image.getRGB(x, y) == Color.WHITE.getRGB()){
+                                    maxX = (maxX < x)? x : maxX;
+                                    if(x == image.getWidth() -2){
+                                            maxY = y;
+                                            break;
+                                    }
+                            }else{
+                                    break;
+                            }
+                    }
+            }
+
+            System.out.println("UpSideDown :" + ((maxY <= upDown)? "flipped" : "yup"));
+            if(maxY <= upDown){	
+                    image = Rotate2(image, 180);
+            }
+
+            return image;
+    }
+
+
+
+    public boolean IsDiagonal(BufferedImage image){
+            boolean retval = false;
+            int blue = Color.BLUE.getRGB();	
+            int maxX = 0;
+
+            for(int y = 0; y < image.getHeight(); y++){
+                    for(int x = 0; x < image.getWidth(); x++){
+                            if(image.getRGB(x, y) == blue){
+                                    maxX = (maxX < x)? x : maxX;
+                                    break;
+                            }else if( x == image.getWidth() - 1){
+                                    image.setRGB(x, y,0);
+                                    maxX = x;
+                                    break;
+                            }else{
+                                    image.setRGB(x, y,0);
+                            }
+                    }
+            }
+            if(maxX == image.getWidth()-1){
+                    retval = false;
+            }else{
+                    retval = true;
+            }
+            System.out.println("diagonal : " + retval);
+
+            return retval;
+    }
+
+
+    public BufferedImage NinetyDegrees(BufferedImage image){
+            double angle;
+            int LX = 0;
+            int LY = 0;
+            int FX = 0;
+            int FY = 0;
+            int i = 0;
+            do{
+                    i++;
+                    image = Rotate2(image, 90);
+                    LX = 0;
+                    LY = 0;
+                    FX = 0;
+                    FY = 0;
+
+                    for(int x = 0; x < image.getWidth(); x++){
+                            for(int y = 0; y < image.getHeight(); y++){
+                                    if(image.getRGB(x, y) == Color.BLUE.getRGB()){
+                                            if(FX< x){
+                                                    FX = x;
+                                                    FY = y;
+                                            }
+                                            if(LY< y){
+                                                    LX = x;
+                                                    LY = y;
+                                            }
+                                    }
+                            }
+                    }
+
+                    double adjacent = FX - LX;
+                    double opposite = LY - FY;
+                    boolean greater = false;
+                    if(adjacent >= opposite){
+                             greater = true;
+                    }else{
+                            opposite = FX - LX;
+                             adjacent = LY - FY;
+                    }
+                    angle = Math.toDegrees(Math.atan2(adjacent, opposite));
+
+                    if(greater){
+                            angle = -angle ;
+                    }	
+            }while(CheckSpace(image,LX, LY, FX, FY) && i < 4);
+            image = Rotate2(image, angle);
+            return image;
+    }
+
+
+    public boolean CheckSpace(BufferedImage image, int x, int y, int x2, int y2 ){
+            boolean retval = false;
+
+             int w = x2 - x ;
+                int h = y2 - y ;
+                int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0 ;
+                if (w<0) dx1 = -1 ; else if (w>0) dx1 = 1 ;
+                if (h<0) dy1 = -1 ; else if (h>0) dy1 = 1 ;
+                if (w<0) dx2 = -1 ; else if (w>0) dx2 = 1 ;
+                int longest = Math.abs(w) ;
+                int shortest = Math.abs(h) ;
+                if (!(longest>shortest)) {
+                    longest = Math.abs(h) ;
+                    shortest = Math.abs(w) ;
+                    if (h<0) dy2 = -1 ; else if (h>0) dy2 = 1 ;
+                    dx2 = 0 ;            
+                }
+                int numerator = longest >> 1 ;
+                for (int i=0;i<=longest;i++) {
+                    if(image.getRGB(x, y) == Color.WHITE.getRGB()){
+                            retval = true;
+                            break;
+                    }
+                    numerator += shortest ;
+                    if (!(numerator<longest)) {
+                        numerator -= longest ;
+                        x += dx1 ;
+                        y += dy1 ;
+                    } else {
+                        x += dx2 ;
+                        y += dy2 ;
+                    }
+                }
+                System.out.println("Wrong Side : " + retval + ((retval)? " - pls rotate 90 deg" : ""));
+            return retval;
+    }
+
+
+
+    public BufferedImage CropImage2(BufferedImage image){
+
+            int Xmin = image.getWidth();
+            int Xmax = 0;
+            int Ymin = image.getHeight();
+            int Ymax = 0;
+
+            int background = Color.WHITE.getRGB();
+            for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                            if(image.getRGB(x, y)  != background ){
+                                    Xmin = (Xmin > x)? x : Xmin ;
+                                    Xmax = (Xmax < x)? x : Xmax ;
+                                    Ymin = (Ymin > y)? y : Ymin ;
+                                    Ymax = (Ymax < y)? y : Ymax;
+                            }
+                    }
+            }
+
+            BufferedImage newImage = new BufferedImage(Xmax - Xmin + 1, Ymax - Ymin + 1, BufferedImage.TYPE_INT_RGB);
+            for(int x = Xmin; x <= Xmax; x++){
+                    for(int y = Ymin; y <= Ymax; y++){
+                            newImage.setRGB(x - Xmin, y - Ymin, image.getRGB(x, y));
+                    }
+            }
+            return newImage;
+    }
+
+
+    public BufferedImage Rotate2(BufferedImage image, double angle){
+        BufferedImage newImage = new BufferedImage(image.getWidth() * 2, image.getHeight() * 2, BufferedImage.TYPE_INT_RGB);
+        int addX = image.getWidth() / 2 ; 
+        int addY = image.getHeight() / 2;
+        for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                            newImage.setRGB(x + addX, y + addY, image.getRGB(x, y));
+                    }
+            }
+
+            AffineTransform tx = new AffineTransform();
+        tx.rotate(angle * (Math.PI / 180), newImage.getWidth() / 2,newImage.getHeight() / 2);
+
+        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_BILINEAR);
+        newImage = op.filter(newImage, null);
+        newImage = removeBlack(newImage);
+        newImage = CropImage2(newImage);
+
+        return newImage;
+    }
+
+
+    public BufferedImage BlackWhite2(BufferedImage image){
+            for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                                    Color color = new Color(image.getRGB(x, y));
+                                    int red = (int)(color.getRed());
+                                    int green = (int)(color.getGreen());
+                                    int blue = (int)(color.getBlue());
+                                    int RGB = red+green+blue;
+
+                                    RGB = (RGB/3 > 75)? 255 : 0 ;
+                                    image.setRGB(x, y, new Color(RGB, RGB, RGB).getRGB());
+                    }
+            }	
+            return image;
+    }	
+
+    public BufferedImage BlueWhite2(BufferedImage image){
+            for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                            Color color = new Color(image.getRGB(x, y));
+                            if(color.getBlue() == 0){
+                                    image.setRGB(x, y, 255);
+                            }
+                    }
+            }	
+            return image;
+    }
+    public BufferedImage removeBlack(BufferedImage image){
+            for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                            Color color = new Color(image.getRGB(x, y));
+                            if(color.getRed() == color.getGreen() && color.getGreen() == color.getBlue()){
+                                    image.setRGB(x, y, Color.WHITE.getRGB());
+                            }
+                    }
+            }	
+            return image;
+    }
+
+    public BufferedImage NIggaWhite(BufferedImage image){
+            for(int x = 0; x < image.getWidth(); x++){
+                    for(int y = 0; y < image.getHeight(); y++){
+                            Color color = new Color(image.getRGB(x, y));
+                            if(color.getRed() == color.getGreen() && color.getGreen() == color.getBlue()){
+                                    image.setRGB(x, y, Color.WHITE.getRGB());
+                            }else{
+                                    image.setRGB(x, y, Color.BLACK.getRGB());
+                            }
+                    }
+            }	
+            return image;
+    }
+
+    public BufferedImage RemoveLine(BufferedImage image){
+
+            int maxX = 0;
+            int maxY = 0; // height of white space from above
+
+            for(int y = 0; y < image.getHeight() && maxX < image.getWidth() -1; y++){
+                    for(int x = 0; x < image.getWidth() && maxX < image.getWidth() -1; x++){
+                            if(image.getRGB(x, y) == Color.WHITE.getRGB()){
+                                    maxX = (maxX < x)? x : maxX;
+                                    if(x == image.getWidth() -1){
+                                            maxY = y;
+                                            break;
+                                    }
+                            }else{
+                                    break;
+                            }
+                    }
+            }
+
+
+            if(maxX == image.getWidth() -1){
+                    for(int x = 0 ; x < image.getWidth(); x++){
+                            for(int y = maxY; y < image.getHeight(); y++){
+                                    image.setRGB(x, y, Color.WHITE.getRGB());
+                            }
+                    }
+            }
+
+            image = CropImage2(image);
+
+            return image;
+    }
 
 }
