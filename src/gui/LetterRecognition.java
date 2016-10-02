@@ -155,7 +155,7 @@ public class LetterRecognition {
                 Processing.columnPercent = columnPattern;
                 Processing.rowPercent = rowPattern;
                 Processing.areaPercent = blackToWhiteRatio;
-                p.guessLetter(segmentPattern);
+                guessLetter.setText(p.guessLetter(segmentPattern));
                 
             }
             
@@ -193,7 +193,7 @@ public class LetterRecognition {
                     Processing.columnPercent = columnPattern;
                     Processing.rowPercent = rowPattern;
                     Processing.areaPercent = blackToWhiteRatio;
-                    p.guessLetter(segmentPattern);
+                    guessLetter.setText(p.guessLetter(segmentPattern));
                 }
                 else{
                     e.consume();

@@ -645,7 +645,9 @@ public class Processing {
         
     }
     
-    public void guessLetter(String pattern){
+    public String guessLetter(String pattern){
+        
+        String letterGuess = "None";         
         println("Guessing....");
         try{
             Statement stmnt = connect.createStatement();
@@ -663,12 +665,16 @@ public class Processing {
                 results.first();
                 String guessLetter = results.getString("letter");
                 println(guessLetter + "");
+                letterGuess = guessLetter;
                 
             }
         }
         catch(SQLException ex){
             println();
         }
+        
+        return letterGuess;
+        
     }
     
     private void println(String string){
