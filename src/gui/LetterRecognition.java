@@ -35,6 +35,7 @@ public class LetterRecognition {
     /**
      * @param args the command line arguments
      */
+    //private static Processing p = new Processing(11);
     private static Processing p = new Processing(5);
     public static void main(String[] args) throws InterruptedException {
         
@@ -138,11 +139,11 @@ public class LetterRecognition {
                     System.out.println("Cannot find image");
                 }*/
                 
-                image = p.BitColor(image);
-                image = p.removeDarkEdges(image);
-                image = p.CropImage(image);
+                //image = p.BitColor(image);
+                //image = p.removeDarkEdges(image);
+                //image = p.CropImage(image);
                 
-                //image = p.StandUp2(image);
+                image = p.Preprocess(image);
                 
                 displayImage = image;
                 cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
@@ -167,20 +168,14 @@ public class LetterRecognition {
                 if(c == KeyEvent.VK_ENTER || c == KeyEvent.VK_SPACE){
                     // get image
                     BufferedImage image = webcam.getImage();
-                    //BufferedImage image = null;
+
                     BufferedImage displayImage = null;
-                    /*try{
-                        image = ImageIO.read(new File("C:\\Users\\anter_000\\Desktop\\image processing\\Letters\\underline_A.png"));
-                    }
-                    catch(IOException ex){
-                        System.out.println("Cannot find image");
-                    }*/
                 
-                    image = p.BitColor(image);
-                    image = p.removeDarkEdges(image);
-                    image = p.CropImage(image);
+                    //image = p.BitColor(image);
+                    //image = p.removeDarkEdges(image);
+                    //image = p.CropImage(image);
                 
-                    //image = p.StandUp2(image);
+                    image = p.Preprocess(image);
                 
                     displayImage = image;
                     cleanImageSample.setIcon(new ImageIcon(p.drawSegments(displayImage)));
